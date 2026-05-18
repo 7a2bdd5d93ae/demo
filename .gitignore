@@ -1,0 +1,9 @@
+entry_*.txt
+__pycache__/
+*.pyc
+.DS_Store
+
+# Local-only tools and docs
+generate_entry.py
+generate.html
+README.md
