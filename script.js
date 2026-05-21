@@ -6,8 +6,6 @@
     var $main     = document.getElementById("main-content");
     var $fallback = document.getElementById("fallback-content");
     var $form     = document.getElementById("lookup-form");
-    var $conf     = document.getElementById("conference");
-    var $year     = document.getElementById("year");
     var $title    = document.getElementById("title");
     var $error    = document.getElementById("error-msg");
     var $fbText   = document.getElementById("fallback-text");
@@ -59,16 +57,16 @@
             );
             return new TextDecoder().decode(pt);
         } catch (e) {
+            console.warn("Failed to decrypt configured project URL.", e);
             return null;
         }
     }
 
-    function normalizeForKey(conference, year, title) {
-        var t = title.toLowerCase()
+    function normalizeTitle(title) {
+        return title.toLowerCase()
             .replace(/[^a-z0-9 ]/g, "")
             .replace(/\s+/g, " ")
             .trim();
-        return conference.toLowerCase() + "|" + String(year) + "|" + t;
     }
 
     // ═══════════════════════════════════════════
@@ -86,12 +84,12 @@
         return null;
     }
 
-    async function findByDetails(conference, year, title) {
-        var raw  = normalizeForKey(conference, year, title);
+    async function findByTitle(title) {
+        var raw  = normalizeTitle(title);
         var hash = await sha256hex(raw);
         for (var i = 0; i < PAPERS.length; i++) {
-            if (PAPERS[i].detail_hash === hash) {
-                return await decryptURL(PAPERS[i].detail_enc, raw);
+            if (PAPERS[i].title_hash === hash) {
+                return await decryptURL(PAPERS[i].title_enc, raw);
             }
         }
         return null;
@@ -114,7 +112,9 @@
             if (url.hostname.indexOf("openreview.net") !== -1) {
                 return url.searchParams.get("id") || null;
             }
-        } catch (_) {}
+        } catch (e) {
+            console.warn("Unable to parse document referrer.", e);
+        }
         return null;
     }
 
@@ -122,23 +122,32 @@
     //  Redirect & UI
     // ═══════════════════════════════════════════
 
+    function getSafeRedirectURL(url) {
+        try {
+            var parsed = new URL(url, window.location.href);
+            if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+                return parsed.href;
+            }
+        } catch (e) {
+            console.warn("Invalid configured project URL.", e);
+        }
+        return null;
+    }
+
     function redirectTo(url) {
+        var safeURL = getSafeRedirectURL(url);
+        if (!safeURL) {
+            console.error("Blocked redirect to an invalid project URL.");
+            showError("The configured project URL is invalid.");
+            return;
+        }
+
         $main.classList.add("hidden");
         $fallback.classList.add("hidden");
         $overlay.classList.remove("hidden");
         setTimeout(function () {
-            window.location.href = url;
+            window.location.href = safeURL;
         }, SETTINGS.redirectDelay);
-    }
-
-    function populateConferences() {
-        CONFERENCES.forEach(function (name) {
-            var opt = document.createElement("option");
-            opt.value = name;
-            opt.textContent = name;
-            if (name === "NeurIPS") opt.selected = true;
-            $conf.appendChild(opt);
-        });
     }
 
     function stripNewlines(el) {
@@ -169,22 +178,17 @@
         e.preventDefault();
         hideError();
 
-        var conference = $conf.value;
-        var year  = $year.value;
         var title = $title.value.trim();
-
-        if (!conference || !year || !title) {
-            showError("Please fill in all fields.");
+        if (!title) {
+            showError("Please enter the paper title.");
             return;
         }
 
-        var url = await findByDetails(conference, parseInt(year, 10), title);
+        var url = await findByTitle(title);
         if (url) {
             redirectTo(url);
         } else {
-            showError(
-                "Paper not found. Please verify the conference, year, and title are correct."
-            );
+            showError("Paper not found. Please verify the title is correct.");
         }
     }
 
@@ -193,7 +197,18 @@
     // ═══════════════════════════════════════════
 
     async function init() {
-        populateConferences();
+        if (typeof PAPERS === "undefined" || !Array.isArray(PAPERS)) {
+            throw new Error("PAPERS configuration is missing or invalid.");
+        }
+
+        if (typeof SETTINGS === "undefined") {
+            throw new Error("SETTINGS configuration is missing.");
+        }
+
+        if (!window.crypto || !window.crypto.subtle) {
+            showError("This browser does not support secure Web Crypto on this page. Please use the hosted HTTPS page.");
+            return;
+        }
 
         var id = getIdFromURL();
         if (!id) id = getIdFromReferrer();
@@ -213,5 +228,8 @@
         }
     }
 
-    init();
+    init().catch(function (e) {
+        console.error("Portal failed to initialize.", e);
+        showError("The portal configuration could not be loaded.");
+    });
 })();
