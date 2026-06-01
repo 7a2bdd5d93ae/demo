@@ -14,6 +14,12 @@
 
 const PAPERS = [
     {
+        id_hash:    "e3f9612474ae913f8ee8f993cf0674df7c00a754a9335438ee3bc12d22570092",
+        id_enc:     "VKswnQhrXrkFMjCo/rA2yXUZHbp60CV4lFO3a9N3p9YTZ1xbsPVQRM7gFRr89FTbhV4Kamyy7WsJu4vka60NitL3ZUTzCL/y4Z5wvz5wr4/Lfohu3SoEcg==",
+        title_hash: "da971752f85c736dc5a296f7d547ffaac66768ba13ae5cbc5aad70d3702bbac0",
+        title_enc:  "YToZCcUaCU1ITLoWMzDUn1ogZjvXSzawPWHzgogXgx0VG5nBZbT3BJu0KQpzwMyBOR/5ZzkDi0ivBFokPI5HCEvJuoCxBkxMx0U1JAshsEL5uuqt/RX5aw=="
+    },
+    {
         id_hash:    "25eb925f8815e6fa9bdca3f8cda296ba5190cc13713e002d5da0d08cb5050727",
         id_enc:     "Yc2h08+OPnXA1rH9skYKt/OtpE9NiPz9h2HSCP+IVAYXc3wiLDi98+DvBTb9wNEtxi1t+Bu9+ynPK5itle9dpsIDSsb2vbR9ncfc5lcc5slcRFS3xT/LCRQVWy8pNryA/+VFeykEpbuo0LaW7M4RSg==",
         title_hash: "b6ae944b6c0fb849240402f8b16ff97e5719beaba23999e026f9bfd900d7661f",
